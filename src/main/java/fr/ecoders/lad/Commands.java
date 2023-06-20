@@ -1,41 +1,41 @@
 package fr.ecoders.lad;
 
 import fr.ecoders.lad.action.EndTurn;
+import fr.ecoders.lad.util.Response;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.Scanner;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 public class Commands {
     // TODO the user should have descriptive error messages on invalid inputs
-    public static final Map<String, BiFunction<Scanner, GameState, Optional<Consumer<GameState>>>> COMMANDS = Map.of(
+    public static final Map<String, BiFunction<Scanner, GameState, Response<Consumer<GameState>, CommandError>>> COMMANDS = Map.of(
             "add-building", Commands::addBuilding,
             "play-card", Commands::playCard,
             "end-turn", Commands::endTurn,
-            "nothing", (sc, gameState) -> Optional.of(g -> {
+            "nothing", (sc, gameState) -> Response.ofValue(g -> {
             }),
-            "invalid", (sc, gameState) -> Optional.empty()
+            "invalid", (sc, gameState) -> Response.ofError(new CommandError.InvalidInputError(""))
     );
 
-    private static Optional<Consumer<GameState>> addBuilding(Scanner sc, GameState gameState) {
-        return Optional.of((GameState g) -> g.addBuilding(new Building()));
+    private static Response<Consumer<GameState>, CommandError> addBuilding(Scanner sc, GameState gameState) {
+        return Response.ofValue((GameState g) -> g.addBuilding(new Building()));
     }
 
-    private static Optional<Consumer<GameState>> playCard(Scanner sc, GameState gameState) {
+    private static Response<Consumer<GameState>, CommandError> playCard(Scanner sc, GameState gameState) {
         if (!sc.hasNextInt()) {
-            return Optional.empty();
+            return Response.ofError(new CommandError.InvalidInputError("no card number given"));
         }
         var index = sc.nextInt();
 
         if (index < 0 || index >= gameState.cardsCount()) {
-            return Optional.empty();
+            return Response.ofError(new CommandError.InvalidInputError("invalid card number"));
         }
-        return Optional.of(gameState.getCard(index).action());
+        return Response.ofValue(gameState.getCard(index).action());
     }
 
-    private static Optional<Consumer<GameState>> endTurn(Scanner sc, GameState gameState) {
-        return Optional.of(new EndTurn());
+    private static Response<Consumer<GameState>, CommandError> endTurn(Scanner sc, GameState gameState) {
+        return Response.ofValue(new EndTurn());
     }
 }
