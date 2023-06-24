@@ -9,7 +9,7 @@ public sealed interface PointOfInterest {
   record Forest() implements PointOfInterest {
     @Override
     public void search(GameState gameState) {
-      var supplies = new Bank(Map.of(Supply.BASIC_CONSTRUCTION, 3, Supply.FOOD, 1));
+      var supplies = Map.of(Supply.BASIC_CONSTRUCTION, 3.0, Supply.FOOD, 1.0);
       gameState.addSupplies(supplies);
     }
   }
@@ -17,7 +17,7 @@ public sealed interface PointOfInterest {
   record River() implements PointOfInterest {
     @Override
     public void search(GameState gameState) {
-      var supplies = Bank.of(Supply.WATER, 2);
+      var supplies = Map.of(Supply.WATER, 2.0);
       gameState.addSupplies(supplies);
     }
   }

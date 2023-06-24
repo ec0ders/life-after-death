@@ -3,26 +3,24 @@ package fr.ecoders.lad.action;
 import fr.ecoders.lad.core.Card;
 import fr.ecoders.lad.core.GameState;
 import fr.ecoders.lad.core.PointOfInterest;
-
 import java.util.Objects;
 
 public sealed interface Action {
 
   void play();
 
-  record PlayCard(GameState gs, Card card) implements Action {
+  record PlayCard(
+    GameState gs,
+    Card card) implements Action {
     public PlayCard {
       Objects.requireNonNull(gs);
       Objects.requireNonNull(card);
-      if (!gs.cards().content().containsKey(card)) {
-          throw new IllegalArgumentException();
+      if (!gs.cards()
+        .containsKey(card)) {
+        throw new IllegalArgumentException();
       }
-      switch (card) {
-        case Card.AddBuilding addBuilding -> {
-          if (!gs.supplies().containsAll(addBuilding.building().cost())) {
-            throw new IllegalArgumentException();
-          }
-        }
+      if (!gs().canPlayCard(card)) {
+        throw new IllegalArgumentException("Unplayable card " + card);
       }
     }
 
@@ -37,7 +35,9 @@ public sealed interface Action {
     }
   }
 
-  record SearchSupply(GameState gs, PointOfInterest poi) implements Action {
+  record SearchSupply(
+    GameState gs,
+    PointOfInterest poi) implements Action {
     public SearchSupply {
       Objects.requireNonNull(gs);
       Objects.requireNonNull(poi);
@@ -49,18 +49,21 @@ public sealed interface Action {
     }
   }
 
-  record ResearchCard(GameState gs, Card card) implements Action {
+  record ResearchCard(
+    GameState gs,
+    Card card) implements Action {
     public ResearchCard {
       Objects.requireNonNull(gs);
       Objects.requireNonNull(card);
-      if (!gs.research().content().containsKey(card)) {
+      if (!gs.research()
+        .containsKey(card)) {
         throw new IllegalArgumentException();
       }
     }
 
     @Override
     public void play() {
-      gs.researchACard(card);
+      gs.researchCard(card);
     }
   }
 

@@ -2,6 +2,7 @@ package fr.ecoders.lad.console;
 
 import fr.ecoders.lad.Utils;
 import fr.ecoders.lad.action.Action;
+import fr.ecoders.lad.core.Card;
 import fr.ecoders.lad.core.GameState;
 import fr.ecoders.lad.core.PointOfInterest;
 import java.lang.reflect.RecordComponent;
@@ -34,7 +35,7 @@ public class ConsoleReader {
     } else if (argType.equals(double.class)) {
       return Double.parseDouble(scanner.next());
     } else {
-      throw new IllegalArgumentException("An argument of a command must be a primitive or a String.");
+      return parseClass(argType);
     }
   }
 
@@ -51,6 +52,31 @@ public class ConsoleReader {
     return Utils.newInstance(constructor, fields.toArray());
   }
 
+  private <T extends Enum<T>> T parseEnum(Class<T> type) {
+    if (!scanner.hasNext()) {
+      return null;
+    }
+    var v = scanner.next()
+      .toUpperCase(Locale.ROOT);
+    var values = Arrays.stream(type.getEnumConstants())
+      .map(Enum::name);
+    if (values.noneMatch(v::equals)) {
+      System.out.println(v + " n'est pas une valeur valide pour " + type.getCanonicalName());
+      return null;
+    }
+    return Enum.valueOf(type, v);
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> T parseClass(Class<T> type) {
+    if (type.isRecord()) {
+      return type.cast(parseRecord((Class<Record>) type));
+    } else if (type.isEnum()) {
+      return type.cast(parseEnum((Class<Enum>) type));
+    }
+    throw new IllegalArgumentException("Cannot parse type " + type.getName());
+  }
+
   /**
    * Read the user's input until a valid action is given. Like "playcard 0".
    *
@@ -60,8 +86,9 @@ public class ConsoleReader {
    */
   public Action getAction(GameState gs) {
     var commands = Command.COMMANDS;
+    var drawer = new ConsoleDrawer(gs);
 
-    System.out.println(gs);
+    drawer.printState();
 
     while (true) {
       if (!scanner.hasNext()) {
@@ -81,14 +108,14 @@ public class ConsoleReader {
       }
 
       var action = switch (cmd) {
-        case Command.PlayCard playCard -> new Action.PlayCard(
-          gs,
-          gs.cards()
-            .content()
-            .keySet()
-            .stream()
-            .toList()
-            .get(playCard.cardIndex()));
+        case Command.PlayCard playCard -> {
+          var card = drawer.getCard(playCard.cardIndex());
+          if (!gs.canPlayCard(card)) {
+            System.out.println("Vous ne pouvez pas jouer cette carte " + card);
+            yield null;
+          }
+          yield new Action.PlayCard(gs, card);
+        }
         case Command.SearchPoi searchPoi -> {
           var poi = switch (searchPoi.poiName()
             .toUpperCase(Locale.ROOT)) {
@@ -97,21 +124,25 @@ public class ConsoleReader {
             default -> null;
           };
           if (poi == null) {
+            System.out.println("Point d'intéret inconnue " + poi);
             yield null;
           }
           yield new Action.SearchSupply(gs, poi);
         }
         case Command.ResearchCard researchCard -> new Action.ResearchCard(
           gs,
-          gs.research()
-            .content()
-            .keySet()
-            .stream()
-            .toList()
-            .get(researchCard.cardIndex()));
+          drawer.getResearch(researchCard.cardIndex()));
+        case Command.Print print -> {
+          switch (print.info()) {
+            case STATE -> drawer.printState();
+            case CARDS -> drawer.printCards();
+            case RESEARCHES -> drawer.printResearches();
+            case SUPPLIES -> drawer.printSupplies();
+          }
+          yield null;
+        }
       };
       if (action == null) {
-        System.out.println("Une erreur est survenue dans la commande");
         continue;
       }
       return action;

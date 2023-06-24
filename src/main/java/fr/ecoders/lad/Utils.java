@@ -1,21 +1,13 @@
 package fr.ecoders.lad;
 
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.RecordComponent;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
-import java.util.AbstractList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.RandomAccess;
+import java.util.Map;
+import java.util.function.BinaryOperator;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class Utils {
   private Utils() {
@@ -29,9 +21,12 @@ public final class Utils {
 
   public static <T> Constructor<T> canonicalConstructor(Class<T> recordClass, RecordComponent[] components) {
     try {
-      return recordClass.getConstructor(Arrays.stream(components).map(RecordComponent::getType).toArray(Class[]::new));
+      return recordClass.getConstructor(Arrays.stream(components)
+        .map(RecordComponent::getType)
+        .toArray(Class[]::new));
     } catch (NoSuchMethodException e) {
-      throw (NoSuchMethodError) new NoSuchMethodError("no public canonical constructor " + recordClass.getName()).initCause(e);
+      throw (NoSuchMethodError) new NoSuchMethodError("no public canonical constructor " + recordClass.getName()).initCause(
+        e);
     }
   }
 
@@ -48,5 +43,12 @@ public final class Utils {
       throw rethrow(e.getCause());
     }
   }
-  
+
+  public static <K, V> Map<K, V> mergeMap(Map<K, V> a, Map<K, V> b, BinaryOperator<V> merger) {
+    var entriesA = a.entrySet();
+    var entriesB = b.entrySet();
+    return Stream.concat(entriesA.stream(), entriesB.stream())
+      .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue, merger));
+  }
+
 }

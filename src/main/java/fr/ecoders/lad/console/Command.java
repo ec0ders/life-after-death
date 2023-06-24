@@ -8,12 +8,23 @@ public sealed interface Command {
     "searchpoi",
     SearchPoi.class,
     "research",
-    ResearchCard.class);
+    ResearchCard.class,
+    "print",
+    Print.class);
 
   record PlayCard(int cardIndex) implements Command {}
 
   record SearchPoi(String poiName) implements Command {}
 
   record ResearchCard(int cardIndex) implements Command {}
+
+  record Print(Info info) implements Command {
+    enum Info {
+      STATE,
+      CARDS,
+      RESEARCHES,
+      SUPPLIES
+    }
+  }
 
 }
