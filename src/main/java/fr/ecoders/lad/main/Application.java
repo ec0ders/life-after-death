@@ -1,6 +1,5 @@
 package fr.ecoders.lad.main;
 
-import fr.ecoders.lad.action.Action;
 import fr.ecoders.lad.console.ConsoleReader;
 import fr.ecoders.lad.core.*;
 
@@ -21,7 +20,6 @@ public class Application {
       var game = new Game(consoleReader::getAction);
       while (true) {
         game.run(gameState);
-        System.out.println(gameState);
       }
     }
   }
